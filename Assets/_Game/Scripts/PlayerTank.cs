@@ -1,20 +1,21 @@
+using System.Collections;
 using UnityEngine;
 
 public class PlayerTank : BaseTank
 {
-    public float distanceFromCamera = 10f;
     public Transform pointFire;
     public BulletTank bulletPrefab;
     public float bulletSpeed = 20f;
-
-    public float countTime;
-    public float timeFire;
-
-    public int countFire;
+    public Transform turretTranform;
+    private float countTime;
+    private float timeFire;
+    private int countFire;
+    private bool canFire;
 
     protected override void Start()
     {
         base.Start();
+        canFire =true;
         countTime = 0f;
         timeFire = 1f;
         countFire = 0;
@@ -27,28 +28,35 @@ public class PlayerTank : BaseTank
 
         if (Physics.Raycast(ray, out hit) && hit.collider.CompareTag("Ground"))
         {
-            Vector3 lookAtPosition = new Vector3(hit.point.x, transform.position.y, hit.point.z);
-
-            transform.LookAt(lookAtPosition);
+            Vector3 lookAtPosition = new Vector3(hit.point.x, turretTranform.position.y, hit.point.z);
+            turretTranform.LookAt(lookAtPosition);
         }
 
-        countTime += Time.deltaTime;    
-        if(countTime >= timeFire){
-            countTime = 0f; 
+        countTime += Time.deltaTime;
+
+        if (countTime >= timeFire)
+        {
+            countTime = 0f;
             countFire = 0;
         }
 
-        if (Input.GetMouseButtonDown(0) &&  countFire < 10)
+        if (Input.GetMouseButton(0) && countFire < 10)
         {
-            Fire(transform.forward);
-            countFire++;
+            if(canFire){
+                StartCoroutine(Fire(turretTranform.forward));
+            }
         }
     }
 
-    protected void Fire(Vector3 direction)
+    protected IEnumerator Fire(Vector3 direction)
     {
-        BulletTank bullet = Instantiate(bulletPrefab, pointFire.position, Quaternion.identity);
+        canFire = false;
+        Quaternion bulletRotation = Quaternion.LookRotation(direction);
+        BulletTank bullet = Instantiate(bulletPrefab, pointFire.position, bulletRotation);
         bullet.type = TypeBullet.player;
         bullet.rb.velocity = direction * bulletSpeed;
+        countFire++;
+        yield return new WaitForSeconds(0.15f);
+        canFire = true;
     }
 }

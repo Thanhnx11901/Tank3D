@@ -1,11 +1,12 @@
+using System.Collections;
 using UnityEngine;
 
 public class BaseTank : MonoBehaviour
 {
-    protected float attackSpeed;
     [SerializeField] protected float hp;             
-    [SerializeField] protected float currentHp;       
-
+    protected float currentHp;  
+    [SerializeField] protected ParticleSystem tankExplosionPrefab;
+        
     protected virtual void Start()
     {
         currentHp = hp;
@@ -14,15 +15,16 @@ public class BaseTank : MonoBehaviour
     public void TakeDamage(float damage)
     {
         currentHp -= damage;
-
         if (currentHp <= 0)
         {
-            Die();
+            StartCoroutine(DieCo());
         }
     }
-
-    private void Die()
-    {
+    private IEnumerator DieCo(){
+        ParticleSystem particleSystem = Instantiate(tankExplosionPrefab);
+        particleSystem.transform.position = transform.position;
+        particleSystem.Play();
+        yield return new WaitForSeconds(.1f);
         Destroy(gameObject);
     }
 }

@@ -12,6 +12,8 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
     public EnemyTank enemyPrefab;
 
+    public DataColorSO dataColor;
+
     private float timeSpawn;
     private float timeCount;
     private void Awake()
@@ -25,7 +27,6 @@ public class GameManager : MonoBehaviour
             Instance = this;
         }
     }
-
     private void Start()
     {
         timeCount = 5f;
@@ -33,13 +34,16 @@ public class GameManager : MonoBehaviour
     }
     private void Update()
     {
+        timeCount += Time.deltaTime;
         if (timeCount >= timeSpawn)
         {
             SpawnEnemy();
             timeCount = 0f;
             timeSpawn -= 0.1f;
+            if(timeSpawn <= 1f){
+                timeSpawn = 1f;
+            }
         }
-        timeCount += Time.deltaTime;
     }
     public void SpawnEnemy()
     {
