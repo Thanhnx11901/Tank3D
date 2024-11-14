@@ -1,62 +1,86 @@
+using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerTank : BaseTank
 {
+    public float attackSpeed = 0.15f;
     public Transform pointFire;
     public BulletTank bulletPrefab;
-    public float bulletSpeed = 20f;
     public Transform turretTranform;
-    private float countTime;
-    private float timeFire;
-    private int countFire;
-    private bool canFire;
+    private float _countTime;
+    private float _timeFire;
+    private int _countFire;
+    
+    private bool _canFire;
+    
+    public Slider healthSlider;
 
     protected override void Start()
     {
         base.Start();
-        canFire =true;
-        countTime = 0f;
-        timeFire = 1f;
-        countFire = 0;
+        _canFire =true;
+        _countTime = 0f;
+        _timeFire = 1f;
+        _countFire = 0;
+        healthSlider.maxValue = Hp;
+        healthSlider.value = Hp;
     }
 
-    void Update()
+    protected void Update()
     {
+        if(GameManager.IsState(GameState.GamePlay) == false) return;
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
 
-        if (Physics.Raycast(ray, out hit) && hit.collider.CompareTag("Ground"))
+        if (Physics.Raycast(ray, out hit) && hit.collider.CompareTag(Constants.TAG_GROUND))
         {
             Vector3 lookAtPosition = new Vector3(hit.point.x, turretTranform.position.y, hit.point.z);
             turretTranform.LookAt(lookAtPosition);
         }
 
-        countTime += Time.deltaTime;
+        _countTime += Time.deltaTime;
 
-        if (countTime >= timeFire)
+        if (_countTime >= _timeFire)
         {
-            countTime = 0f;
-            countFire = 0;
+            _countTime = 0f;
+            _countFire = 0;
         }
 
-        if (Input.GetMouseButton(0) && countFire < 10)
+        if (Input.GetMouseButton(0) && _countFire < 10)
         {
-            if(canFire){
+            if(_canFire){
                 StartCoroutine(Fire(turretTranform.forward));
             }
         }
     }
-
-    protected IEnumerator Fire(Vector3 direction)
+    private IEnumerator Fire(Vector3 direction)
     {
-        canFire = false;
+        _canFire = false;
+        
         Quaternion bulletRotation = Quaternion.LookRotation(direction);
         BulletTank bullet = Instantiate(bulletPrefab, pointFire.position, bulletRotation);
-        bullet.type = TypeBullet.player;
-        bullet.rb.velocity = direction * bulletSpeed;
-        countFire++;
-        yield return new WaitForSeconds(0.15f);
-        canFire = true;
+        bullet.OnInit(TypeBullet.player, direction, bulletSpeed);
+        
+        _countFire++;
+        
+        yield return new WaitForSeconds(attackSpeed);
+        
+        _canFire = true;
+    }
+
+    public override void TakeDamage(float damage)
+    {
+        base.TakeDamage(damage);
+        healthSlider.value = _currentHp;
+    }
+
+    private void OnDisable()
+    {
+        GameManager.ChangeState(GameState.Lose);
+        UIManager.Ins.CloseAll();
+        UIManager.Ins.OpenUI<Lose>();
+        
     }
 }

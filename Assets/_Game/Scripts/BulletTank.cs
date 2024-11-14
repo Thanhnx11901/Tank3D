@@ -9,24 +9,32 @@ public enum TypeBullet
 }
 public class BulletTank : MonoBehaviour
 {
-    public Rigidbody rb;
+    [SerializeField] private Rigidbody _rb;
     public TypeBullet type;
     [SerializeField] protected ParticleSystem explosionPrefab;
+
+    public void OnInit(TypeBullet typeBullet, Vector3 direction, float bulletSpeed)
+    {
+        type = typeBullet;
+        _rb.velocity = direction * bulletSpeed;
+    }
     private void OnTriggerEnter(Collider other)
     {
         if (type == TypeBullet.enemy)
         {
-            if (other.CompareTag("Player"))
+            PlayerTank playerTank = Cache<PlayerTank>.GetCollider(other);
+            if (playerTank != null )
             {
-                other.GetComponent<BaseTank>().TakeDamage(Random.Range(1f, 5f));
+                playerTank.TakeDamage(Random.Range(1f, 5f));
                 DestroyBullet();
             }
         }
         if (type == TypeBullet.player)
         {
-            if (other.CompareTag("Enemy"))
+            EnemyTank enemyTank = Cache<EnemyTank>.GetCollider(other);
+            if (enemyTank != null )
             {
-                other.GetComponent<BaseTank>().TakeDamage(Random.Range(1f, 5f));
+                enemyTank.TakeDamage(Random.Range(1f, 5f));
                 DestroyBullet();
             }
         }

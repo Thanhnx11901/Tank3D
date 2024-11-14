@@ -1,24 +1,39 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Serialization;
+using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 public class EnemyTank : BaseTank
 {
-    private IState<EnemyTank> currentState;
+    private IState<EnemyTank> _currentState;
+    
     public Transform turret;
     public Transform pointFire;
-    public Transform pointRotationStart;
+    
     public BulletTank bulletPrefab;
-    public float rotationSpeedTurret;
-    public float bulletSpeed = 20f;
-    public float minDistance = 5f;
-    public float maxDistance = 7f;
-    public bool canFire = true;
+    
+    [SerializeField] private float _rotationSpeedTurret;
+    
+    private float _minDistance;
+    private float _maxDistance;
+    
+    private bool _canFire = true;
+    public bool CanFire
+    {
+        get => _canFire;
+        set => _canFire = value;
+    }
 
     public NavMeshAgent agent;
-
-
+    
+    public Slider healthBar;
+    private float _countTimeShowHealthBar;
+    private float _timeShowHealthBar;
+    
     [SerializeField] private MeshRenderer meshRenderer;
     [SerializeField] private MeshRenderer meshRenderer1;
     [SerializeField] private MeshRenderer meshRenderer2;
@@ -27,6 +42,20 @@ public class EnemyTank : BaseTank
     protected override void Start()
     {
         base.Start();
+        OnInit();
+    }
+
+    public void OnInit()
+    {
+        _timeShowHealthBar = 1f;
+        _countTimeShowHealthBar = 0f;
+        healthBar.gameObject.SetActive(false);
+        healthBar.maxValue = Hp;
+        healthBar.value = Hp;
+
+        _minDistance = 5f;
+        _maxDistance = 7f;
+        
         RandomColorTank();
         ChangeState(new IdleState());
     }
@@ -41,23 +70,24 @@ public class EnemyTank : BaseTank
 
     public void ChangeState(IState<EnemyTank> state)
     {
-        if (currentState != null)
+        if (_currentState != null)
         {
-            currentState.OnExit(this);
+            _currentState.OnExit(this);
         }
 
-        currentState = state;
+        _currentState = state;
 
-        if (currentState != null)
+        if (_currentState != null)
         {
-            currentState.OnEnter(this);
+            _currentState.OnEnter(this);
         }
     }
     private void Update()
     {
-        if (currentState != null)
+        if(GameManager.IsState(GameState.GamePlay) == false) return;
+        if (_currentState != null)
         {
-            currentState.OnExecute(this);
+            _currentState.OnExecute(this);
         }
     }
     public void TurretRotationPlayer()
@@ -66,39 +96,38 @@ public class EnemyTank : BaseTank
 
         Quaternion desiredRotation = Quaternion.LookRotation(turretDirection, Vector3.up);
 
-        turret.transform.rotation = Quaternion.RotateTowards(turret.transform.rotation, desiredRotation, rotationSpeedTurret * Time.deltaTime);
+        turret.transform.rotation = Quaternion.RotateTowards(turret.transform.rotation, desiredRotation, _rotationSpeedTurret * Time.deltaTime);
 
         if (Quaternion.Angle(turret.transform.rotation, desiredRotation) < 1f)
         {
-            if (canFire)
+            if (_canFire)
             {
                 Fire(turret.transform.forward);
             }
         }
     }
-    protected void Fire(Vector3 direction)
+    private void Fire(Vector3 direction)
     {
         Quaternion bulletRotation = Quaternion.LookRotation(direction);
         BulletTank bullet = Instantiate(bulletPrefab, pointFire.position, bulletRotation);
-        bullet.type = TypeBullet.enemy;
-        bullet.rb.velocity = direction * bulletSpeed;
-        canFire = false;
-        ChangeState(new TurretState());
+        bullet.OnInit(TypeBullet.enemy,direction,bulletSpeed);
+        
+        _canFire = false;
+        
+        ChangeState(new TurretRotationStartState());
     }
 
-    public void TurretRotation()
+    public void TurretRotationStart()
     {
         Quaternion desiredRotation = Quaternion.Euler(0, 0, 0);
 
-        turret.transform.localRotation = Quaternion.RotateTowards(turret.transform.localRotation, desiredRotation, rotationSpeedTurret * Time.deltaTime);
+        turret.transform.localRotation = Quaternion.RotateTowards(turret.transform.localRotation, desiredRotation, _rotationSpeedTurret * Time.deltaTime);
 
         if (Quaternion.Angle(turret.transform.localRotation, desiredRotation) < 1f)
         {
             ChangeState(new IdleState());
         }
     }
-
-
     public Vector3 GetRandomPosition()
     {
         Vector3 randomPosition;
@@ -106,11 +135,11 @@ public class EnemyTank : BaseTank
 
         do
         {
-            Vector3 randomDirection = Random.insideUnitSphere * maxDistance;
+            Vector3 randomDirection = Random.insideUnitSphere * _maxDistance;
             randomDirection += GameManager.Instance.player.transform.position;
-            if (NavMesh.SamplePosition(randomDirection, out hit, maxDistance, NavMesh.AllAreas))
+            if (NavMesh.SamplePosition(randomDirection, out hit, _maxDistance, NavMesh.AllAreas))
             {
-                if (Vector3.Distance(hit.position, GameManager.Instance.player.transform.position) > minDistance)
+                if (Vector3.Distance(hit.position, GameManager.Instance.player.transform.position) > _minDistance)
                 {
                     randomPosition = hit.position;
                     break;
@@ -120,6 +149,27 @@ public class EnemyTank : BaseTank
 
         return randomPosition;
     }
+    public override void TakeDamage(float damage)
+    {
+        base.TakeDamage(damage);
+        StartCoroutine(ShowHealthBar());
+    }
 
+    private IEnumerator ShowHealthBar()
+    {
+        healthBar.gameObject.SetActive(true);
+        healthBar.value = _currentHp;
+        _countTimeShowHealthBar = 0f;
+        while (_countTimeShowHealthBar <= _timeShowHealthBar)
+        {
+            _countTimeShowHealthBar+= Time.deltaTime;
+            yield return new WaitForEndOfFrame();
+        }
+        healthBar.gameObject.SetActive(false);
+    }
 
+    private void OnDisable()
+    {
+        GameManager.Instance.score += 1;
+    }
 }

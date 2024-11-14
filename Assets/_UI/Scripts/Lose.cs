@@ -1,15 +1,20 @@
-using System.Collections;
-using System.Collections.Generic;
+
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class Lose : UICanvas
 {
     public Text score;
+    public Button mainMenuButton;
+    private void Start()
+    {
+        score.text = "Score:" + GameManager.Instance.score.ToString();
+        mainMenuButton.onClick.AddListener(MainMenuButton);
+    }
 
     public void MainMenuButton()
     {
-        UIManager.Ins.OpenUI<MianMenu>();
-        Close(0);
+        SceneManager.LoadScene("Main");
     }
 }

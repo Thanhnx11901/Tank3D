@@ -5,6 +5,13 @@ using Unity.VisualScripting;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
+public enum GameState
+{
+    MainMenu,
+    GamePlay,
+    Win,
+    Lose,
+}
 public class GameManager : MonoBehaviour
 {
     public float width = 10f;
@@ -16,6 +23,10 @@ public class GameManager : MonoBehaviour
 
     private float timeSpawn;
     private float timeCount;
+    
+    private static GameState gameState = GameState.MainMenu;
+
+    public int score;
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -29,15 +40,33 @@ public class GameManager : MonoBehaviour
     }
     private void Start()
     {
+        UIManager.Ins.OpenUI<MianMenu>();
+        score = 0; 
         timeCount = 5f;
         timeSpawn = 5f;
     }
+    public static void ChangeState(GameState state)
+    {
+        gameState = state;
+    }
+
+    public static bool IsState(GameState state)
+    {
+        return gameState == state;
+    }
     private void Update()
     {
+        SpawnEnemy();
+    }
+
+    public void SpawnEnemy()
+    {
+        if(GameManager.IsState(GameState.GamePlay) == false) return;
         timeCount += Time.deltaTime;
         if (timeCount >= timeSpawn)
         {
-            SpawnEnemy();
+            EnemyTank tank = Instantiate(enemyPrefab);
+            tank.transform.position = GetRandomPointOnEdge();
             timeCount = 0f;
             timeSpawn -= 0.1f;
             if(timeSpawn <= 1f){
@@ -45,12 +74,6 @@ public class GameManager : MonoBehaviour
             }
         }
     }
-    public void SpawnEnemy()
-    {
-        EnemyTank tank = Instantiate(enemyPrefab);
-        tank.transform.position = GetRandomPointOnEdge();
-    }
-
     public Vector3 GetRandomPointOnEdge()
     {
         int edgeIndex = Random.Range(0, 4);

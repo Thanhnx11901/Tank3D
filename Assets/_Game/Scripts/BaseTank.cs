@@ -1,21 +1,28 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class BaseTank : MonoBehaviour
 {
-    [SerializeField] protected float hp;             
-    protected float currentHp;  
+    [SerializeField] private float _hp;
+    public float bulletSpeed = 20f;
+    public float Hp
+    {
+        get => _hp;
+        set => _hp = value;
+    }             
+    protected float _currentHp;  
     [SerializeField] protected ParticleSystem tankExplosionPrefab;
         
     protected virtual void Start()
     {
-        currentHp = hp;
+        _currentHp = Hp;
     }
 
-    public void TakeDamage(float damage)
+    public virtual void TakeDamage(float damage)
     {
-        currentHp -= damage;
-        if (currentHp <= 0)
+        _currentHp -= damage;
+        if (_currentHp <= 0)
         {
             StartCoroutine(DieCo());
         }

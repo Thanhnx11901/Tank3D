@@ -9,12 +9,12 @@ public class UICanvas : MonoBehaviour
 
     protected RectTransform m_RectTransform;
     private Animator m_Animator;
-    private float m_OffsetY = 0;
+    //private float m_OffsetY = 0;
 
-    private void Start()
-    {
-        OnInit();
-    }
+    // private void Start()
+    // {
+    //     OnInit();
+    // }
 
     //Init default Canvas
     //khoi tao gia tri canvas
@@ -33,7 +33,7 @@ public class UICanvas : MonoBehaviour
             m_RectTransform.offsetMax = rightTop;
             leftBottom.y = 0f;
             m_RectTransform.offsetMin = leftBottom;
-            m_OffsetY = 100f;
+            //m_OffsetY = 100f;
         }
     }
 
