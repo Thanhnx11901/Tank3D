@@ -5,4 +5,5 @@ using UnityEngine;
 public class Constants : MonoBehaviour
 {
     public const string TAG_GROUND = "Ground";
+    public const string TAG_BULLET = "Bullet";
 }

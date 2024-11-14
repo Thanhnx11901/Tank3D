@@ -9,7 +9,7 @@ public class Lose : UICanvas
     public Button mainMenuButton;
     private void Start()
     {
-        score.text = "Score:" + GameManager.Instance.score.ToString();
+        score.text = "Score: " + GameManager.Instance.score.ToString();
         mainMenuButton.onClick.AddListener(MainMenuButton);
     }
 

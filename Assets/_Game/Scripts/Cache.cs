@@ -5,8 +5,7 @@ using UnityEngine;
 public class Cache <T>
 {
     private static Dictionary<Collider, T> dict = new Dictionary<Collider, T>();
-
-
+    
     public static T GetCollider(Collider collider)
     {
         if (!Contains(collider))

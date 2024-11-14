@@ -9,7 +9,6 @@ public enum GameState
 {
     MainMenu,
     GamePlay,
-    Win,
     Lose,
 }
 public class GameManager : MonoBehaviour
@@ -21,10 +20,15 @@ public class GameManager : MonoBehaviour
 
     public DataColorSO dataColor;
 
-    private float timeSpawn;
-    private float timeCount;
+    private float _timeSpawnEnemy;
+    private float _timeCountEnemy;
+    
+    private float _timeSpawnBarrel;
+    private float _timeCountBarrel;
     
     private static GameState gameState = GameState.MainMenu;
+    
+    [SerializeField] private Barrel barrelPrefab;
 
     public int score;
     private void Awake()
@@ -42,14 +46,16 @@ public class GameManager : MonoBehaviour
     {
         UIManager.Ins.OpenUI<MianMenu>();
         score = 0; 
-        timeCount = 5f;
-        timeSpawn = 5f;
+        _timeCountEnemy = 5f;
+        _timeSpawnEnemy = 5f;
+        _timeCountBarrel = 7f;
+        _timeSpawnBarrel = 7f;
+        
     }
     public static void ChangeState(GameState state)
     {
         gameState = state;
     }
-
     public static bool IsState(GameState state)
     {
         return gameState == state;
@@ -57,24 +63,38 @@ public class GameManager : MonoBehaviour
     private void Update()
     {
         SpawnEnemy();
+        SpawnBarrel();
     }
-
-    public void SpawnEnemy()
+    private void SpawnBarrel()
+    {
+        _timeCountBarrel += Time.deltaTime;
+        if (_timeCountBarrel >= _timeSpawnBarrel)
+        {
+            Barrel barrel =  Instantiate(barrelPrefab);
+            barrel.transform.position = GetRandomPosition();
+            _timeCountBarrel = 0f;
+        }
+    }
+    private Vector3 GetRandomPosition()
+    {
+        return new Vector3(Random.Range(-8f, 8f), 0, Random.Range(-8f, 8f));
+    }
+    private void SpawnEnemy()
     {
         if(GameManager.IsState(GameState.GamePlay) == false) return;
-        timeCount += Time.deltaTime;
-        if (timeCount >= timeSpawn)
+        _timeCountEnemy += Time.deltaTime;
+        if (_timeCountEnemy >= _timeSpawnEnemy)
         {
             EnemyTank tank = Instantiate(enemyPrefab);
             tank.transform.position = GetRandomPointOnEdge();
-            timeCount = 0f;
-            timeSpawn -= 0.1f;
-            if(timeSpawn <= 1f){
-                timeSpawn = 1f;
+            _timeCountEnemy = 0f;
+            _timeSpawnEnemy -= 0.1f;
+            if(_timeSpawnEnemy <= 1f){
+                _timeSpawnEnemy = 1f;
             }
         }
     }
-    public Vector3 GetRandomPointOnEdge()
+    private Vector3 GetRandomPointOnEdge()
     {
         int edgeIndex = Random.Range(0, 4);
         float random = Random.Range(-width / 2, width / 2);

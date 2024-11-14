@@ -102,7 +102,16 @@ public class EnemyTank : BaseTank
         {
             if (_canFire)
             {
-                Fire(turret.transform.forward);
+                int randomFire = Random.Range(0, 2);
+                if (randomFire == 0)
+                {
+                    Fire(turret.transform.forward);
+                }
+                else
+                {
+                    StartCoroutine(FireLaser());
+                }
+                
             }
         }
     }
@@ -115,6 +124,44 @@ public class EnemyTank : BaseTank
         _canFire = false;
         
         ChangeState(new TurretRotationStartState());
+    }
+    
+    private IEnumerator FireLaser()
+    {
+        laserLine.enabled = true;
+        laserLine.SetPosition(0, pointFire.position);
+        
+        Vector3 laserEndPosition = pointFire.position;
+        RaycastHit hit;
+        
+        if (Physics.Raycast(pointFire.position, turret.transform.forward, out hit, 100f))
+        {
+            laserEndPosition = hit.point;
+            
+            CheckCollision(hit);
+            
+            ParticleSystem hitLaser = Instantiate(hitLaserPrefab, laserEndPosition, Quaternion.identity);
+            hitLaser.Play();
+        }
+        laserLine.SetPosition(1, laserEndPosition);
+        _canFire = false;
+        ChangeState(new TurretRotationStartState());
+        yield return new WaitForSeconds(.1f);
+        laserLine.enabled = false;
+    }
+
+    private void CheckCollision(RaycastHit hit)
+    {
+        PlayerTank playerTank = Cache<PlayerTank>.GetCollider(hit.collider);
+        if (playerTank != null )
+        {
+            playerTank.TakeDamage(Random.Range(1f, 5f));
+        }
+        Barrel barrel = Cache<Barrel>.GetCollider(hit.collider);
+        if (barrel != null )
+        {
+            barrel.ExplodeBarrel();
+        }
     }
 
     public void TurretRotationStart()
@@ -167,7 +214,6 @@ public class EnemyTank : BaseTank
         }
         healthBar.gameObject.SetActive(false);
     }
-
     private void OnDisable()
     {
         GameManager.Instance.score += 1;

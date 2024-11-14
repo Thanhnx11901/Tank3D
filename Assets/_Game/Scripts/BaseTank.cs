@@ -6,6 +6,8 @@ public class BaseTank : MonoBehaviour
 {
     [SerializeField] private float _hp;
     public float bulletSpeed = 20f;
+    [SerializeField] protected ParticleSystem hitLaserPrefab;
+    [SerializeField] protected LineRenderer laserLine;
     public float Hp
     {
         get => _hp;
